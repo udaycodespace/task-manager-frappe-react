@@ -1,23 +1,23 @@
-# Frappe Backend
+# Task Manager - Backend (Frappe)
 
-The backend for this project is built on the **Frappe Framework**.
+This directory contains the Python logic for the Task Manager.
 
-## 📂 Location
-The source code runs in a standard Frappe Bench environment on WSL (Ubuntu).
-* **Bench Path:** `~/frappe-bench`
-* **Site:** `task-manager.local`
-* **Custom App:** `task_manager`
+## 📄 Key File: `api.py`
+The core logic resides in `task_manager.api`. It bypasses the standard REST API to use Remote Procedure Calls (RPC).
 
-## 🛠️ Configuration
-* **DocType:** `Task` (Custom Module)
-* **Fields:**
-    * `Title` (Data, Mandatory)
-    * `Status` (Select: Pending, In Progress, Completed)
-    * `Description` (Text Editor)
+### Setup Instructions
+1. Copy the `api.py` code into your bench app: `apps/task_manager/task_manager/api.py`.
+2. **Important:** Run the following SQL command to add the Priority column (since we are not using the Desk UI):
+   ```sql
+   ALTER TABLE `tabTask` ADD COLUMN `priority` VARCHAR(140) DEFAULT 'Medium';
 
-## 🚀 How to Run
-1.  Start the bench server:
-    ```bash
-    bench start
-    ```
-2.  The API is accessible at: `http://localhost:8000/api/resource/Task`
+```
+
+3. Restart bench: `bench restart`.
+
+### API Endpoints
+
+* `task_manager.api.get_tasks` (GET)
+* `task_manager.api.add_task` (POST)
+* `task_manager.api.update_task` (POST)
+* `task_manager.api.delete_task` (POST)
