@@ -1,46 +1,56 @@
 import frappe
 
-# 1. GET TASKS (Added priority to fields)
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_tasks():
-    if frappe.db.exists("DocType", "Task"):
-        return frappe.db.get_list("Task",
-            fields=["name", "title", "status", "description", "due_date", "priority"],
-            ignore_permissions=True,
-            order_by="creation desc"
-        )
-    return []
+    if frappe.session.user == "Guest":
+        frappe.throw("Login required")
 
-# 2. ADD TASK (Added priority argument)
-@frappe.whitelist(allow_guest=True)
+    return frappe.db.get_list(
+        "Task",
+        fields=["name", "title", "status", "description", "due_date", "priority"],
+        filters={"owner": frappe.session.user},
+        order_by="creation desc"
+    )
+
+
+@frappe.whitelist()
 def add_task(title, description=None, due_date=None, priority="Medium"):
-    if not title:
-        frappe.throw("Task Title is required!")
+    if frappe.session.user == "Guest":
+        frappe.throw("Login required")
 
-    new_task = frappe.get_doc({
+    doc = frappe.get_doc({
         "doctype": "Task",
         "title": title,
         "status": "Open",
         "description": description,
         "due_date": due_date,
-        "priority": priority
+        "priority": priority,
+        "owner": frappe.session.user
     })
-    new_task.insert(ignore_permissions=True)
-    return new_task
 
-# 3. UPDATE TASK
-@frappe.whitelist(allow_guest=True)
-def update_task(name, status):
-    if not frappe.db.exists("Task", name):
-        frappe.throw(f"Task {name} not found!")
-    doc = frappe.get_doc("Task", name)
-    doc.status = status
-    doc.save(ignore_permissions=True)
+    doc.insert()
     return doc
 
-# 4. DELETE TASK
-@frappe.whitelist(allow_guest=True)
+
+@frappe.whitelist()
+def update_task(name, status):
+    doc = frappe.get_doc("Task", name)
+
+    if doc.owner != frappe.session.user:
+        frappe.throw("Not permitted")
+
+    doc.status = status
+    doc.save()
+    return doc
+
+
+@frappe.whitelist()
 def delete_task(name):
-    if not frappe.db.exists("Task", name):
-        frappe.throw(f"Task {name} not found!")
-    frappe.delete_doc("Task", name, ignore_permissions=True)
+    doc = frappe.get_doc("Task", name)
+
+    if doc.owner != frappe.session.user:
+        frappe.throw("Not permitted")
+
+    frappe.delete_doc("Task", name)
+
+## CHANGED FOR NEW TASK @MONDAY 26-01-2026
